@@ -32,7 +32,7 @@ public class CvServiceImpl implements CvService {
 
     @Override
     public List<Cv> getAllCvForUserId(@NonNull Integer userId) {
-        return cvRepository.getAllCvForUserId(userId);
+        return cvRepository.findAllByUser_Id(userId);
     }
 
     @Override

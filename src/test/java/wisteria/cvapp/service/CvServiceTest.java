@@ -62,6 +62,17 @@ class CvServiceTest {
 
     @Test
     void updateCv() {
+        Integer userId=1;
+        Integer cvId=5;
+        CvDetailsDto cvDetailsDto=new CvDetailsDto();
+        cvDetailsDto.setUserId(userId);
+
+        List<CvDetailsFieldDto> skillInfo=Arrays.asList(new CvDetailsFieldDto("Skills","Skill","Talking"),
+                new CvDetailsFieldDto("Skills","Degree","per"));
+        List<CvDetailsFieldDto> skillINfoTmp=Arrays.asList(new CvDetailsFieldDto("Skills","Skill","Spring"),
+                new CvDetailsFieldDto("Skills","Degree","per"));
+        cvDetailsDto.getCategoryMap().put("Skills",Arrays.asList(skillInfo,skillINfoTmp));
+        log.info("Test successful with result {}",this.cvService.updateCv(cvId,cvDetailsDto));
     }
 
     @Test

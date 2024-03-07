@@ -13,6 +13,8 @@ public interface CvRepository extends JpaRepository<Cv, Integer> {
     @Query(value = QueryConstants.getAllCvForUserId, nativeQuery = true)
     List<Cv> getAllCvForUserId(Integer userId);
 
+    List<Cv> findAllByUser_Id(Integer userId);
+
 //    @Query(value = QueryConstants.getCvDetails, nativeQuery = true)
 //    List<List<String>> getCvDetails(Integer cvId, Integer userId);
 
