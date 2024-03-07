@@ -13,5 +13,5 @@ public interface CvCategoryService {
     List<Integer> saveAll(@NonNull CvDetailsDto cvDetailsDto, @NotNull Cv cv);
     List<Integer> deleteAll(@NotNull Cv cv);
     List<Integer> getCategoryIdsByCvIdAndUserId(@NotNull Integer cvId, @NotNull Integer userId);
-    Map<String,List<List<CvDetailsFieldDto>>> getFieldDetailsForCategoryIdList(@NotNull List<Integer> categoryIds);
+    Map<String, List<List<CvDetailsFieldDto>>> getFieldDetailsForCvId(@NotNull Integer cvId,@NotNull Integer userId);
 }

@@ -21,7 +21,7 @@ public final class QueryConstants {
             "where cv.id=:cvId and cv.user_id=:userId";
     //CV CATEGORY DETAILS
     public static final String getCvDetails="select cc.id       as categoryId,\n" +
-            "       cc.category as category,\n" +
+            "       cc.category as categoryName,\n" +
             "       ccd.label   as label,\n" +
             "       ccd.value   as value\n" +
             "from cv_category cc\n" +

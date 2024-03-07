@@ -69,11 +69,11 @@ public class CvCategoryServiceImpl implements CvCategoryService {
         return this.cvCategoryRepository.findCategoryIdsByCvId(cvId, userId);
     }
 
+
     @Override
-    public Map<String, List<List<CvDetailsFieldDto>>> getFieldDetailsForCategoryIdList(List<Integer> categoryIds) {
-        HashMap<String,List<List<CvDetailsFieldDto>>> map=new HashMap<>();
-        categoryIds.forEach(categoryId->);
-        return null;
+    public Map<String, List<List<CvDetailsFieldDto>>> getFieldDetailsForCvId(Integer cvId, Integer userId) {
+        List<Integer> categoryIdsForCv = getCategoryIdsByCvIdAndUserId(cvId, userId);
+        return this.cvCategoryDetailsService.getCvCategoryDetailsForCategoryIdList(categoryIdsForCv);
     }
 
     private CvCategory categoryMapping(String categoryName,

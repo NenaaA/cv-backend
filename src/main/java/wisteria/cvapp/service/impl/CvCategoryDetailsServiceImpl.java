@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 import wisteria.cvapp.model.CvCategory;
 import wisteria.cvapp.model.CvCategoryDetails;
 import wisteria.cvapp.model.dto.CvDetailsFieldDto;
+import wisteria.cvapp.model.projection.CvCategoryFieldProjection;
 import wisteria.cvapp.repository.CvCategoryDetailsRepository;
 import wisteria.cvapp.service.CvCategoryDetailsService;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,11 +45,24 @@ public class CvCategoryDetailsServiceImpl implements CvCategoryDetailsService {
         return null;
     }
 
-    @Override
-    public Map<String, List<List<CvCategoryDetails>>> getCvCategoryDetailsForCategoryIdList(List<Integer> categoryIds) {
-        //TODO:use a projection for repoResult
-        List<CvCategoryDetails> repoResult=this.cvCategoryDetailsRepository.getCvDetails(categoryIds);
 
-        return null;
+    @Override
+    public Map<String, List<List<CvDetailsFieldDto>>> getCvCategoryDetailsForCategoryIdList(List<Integer> categoryIds) {
+        List<CvCategoryFieldProjection> cvDetailsFields = this.cvCategoryDetailsRepository.getCvDetails(categoryIds);
+        Map<String, List<List<CvDetailsFieldDto>>> resultMap = new HashMap<>();
+        Map<Integer, List<CvCategoryFieldProjection>> projectionMap = cvDetailsFields.stream()
+                .collect(Collectors.groupingBy(CvCategoryFieldProjection::getCategoryId));
+        for (Map.Entry<Integer, List<CvCategoryFieldProjection>> entry : projectionMap.entrySet()) {
+            String categoryKey = (entry.getValue().get(0).getCategoryName());
+            resultMap.computeIfAbsent(categoryKey, k -> new ArrayList<>()).add(fieldMappingFromProjection(entry.getValue()));
+        }
+        return resultMap;
+    }
+    private List<CvDetailsFieldDto> fieldMappingFromProjection(List<CvCategoryFieldProjection> fieldProjections) {
+        return fieldProjections.stream()
+                .map(projection -> new CvDetailsFieldDto(projection.getCategoryName(),
+                        projection.getLabel(),
+                        projection.getValue()))
+                .collect(Collectors.toList());
     }
 }

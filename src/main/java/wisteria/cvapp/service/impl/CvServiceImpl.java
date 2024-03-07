@@ -37,19 +37,20 @@ public class CvServiceImpl implements CvService {
 
     @Override
     public CvDetailsDto getCv(@NotNull Integer cvId, @NonNull Integer userId) {
-        List<List<String>> cvDetailsFieldDbValues = this.cvRepository.getCvDetails(cvId, userId);
+        // List<List<String>> cvDetailsFieldDbValues = this.cvRepository.getCvDetails(cvId, userId);
 //       cvDetailsDtos.forEach(dto->cvDetailsMap.put(dto.getCategory(), new ArrayList<>()));
 //        cvDetailsDtos.forEach(dto->cvDetailsMap.get(dto.getCategory()).add(dto));
         //find all cv category ids for the cv
-        List<Integer> categoryIds=this.cvCategoryService.getCategoryIdsByCvIdAndUserId(cvId,userId);
-        List<CvDetailsFieldDto> cvDetailsFieldDtos = cvDetailsFieldDbValues.stream().map(fieldList -> {
-                    if (fieldList.size() == 3)
-                        return new CvDetailsFieldDto(fieldList.get(0), fieldList.get(1), fieldList.get(2));
-                    return null;
-                }
-        ).collect(Collectors.toList());
-        Map<String, List<CvDetailsFieldDto>> cvDetailsMap = cvDetailsFieldDtos.stream()
-                .collect(Collectors.groupingBy(CvDetailsFieldDto::getCategory));
+//        List<Integer> categoryIds=this.cvCategoryService.getCategoryIdsByCvIdAndUserId(cvId,userId);
+//        List<CvDetailsFieldDto> cvDetailsFieldDtos = cvDetailsFieldDbValues.stream().map(fieldList -> {
+//                    if (fieldList.size() == 3)
+//                        return new CvDetailsFieldDto(fieldList.get(0), fieldList.get(1), fieldList.get(2));
+//                    return null;
+//                }
+//        ).collect(Collectors.toList());
+//        Map<String, List<CvDetailsFieldDto>> cvDetailsMap = cvDetailsFieldDtos.stream()
+//                .collect(Collectors.groupingBy(CvDetailsFieldDto::getCategory));
+        Map<String, List<List<CvDetailsFieldDto>>> cvDetailsMap = this.cvCategoryService.getFieldDetailsForCvId(cvId, userId);
         CvDetailsDto cvDetailsDto = new CvDetailsDto();
         cvDetailsDto.setUserId(userId);
         cvDetailsDto.getCategoryMap().putAll(cvDetailsMap);
