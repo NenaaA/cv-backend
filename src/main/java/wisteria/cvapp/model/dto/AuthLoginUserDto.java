@@ -5,8 +5,8 @@ import lombok.Data;
 
 @Data
 public class AuthLoginUserDto {
-    @NotNull(message = "email is required")
-    private String email;
+    @NotNull(message = "username is required")
+    private String username;
     @NotNull(message = "password is required")
     private String password;
 }

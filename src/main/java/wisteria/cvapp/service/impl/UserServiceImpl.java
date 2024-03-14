@@ -2,6 +2,12 @@ package wisteria.cvapp.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import wisteria.cvapp.model.User;
 import wisteria.cvapp.model.dto.AuthLoginUserDto;
@@ -9,7 +15,12 @@ import wisteria.cvapp.model.dto.AuthRegisterUserDto;
 import wisteria.cvapp.model.dto.JwtSignInUserDto;
 import wisteria.cvapp.repository.UserRepository;
 
+import wisteria.cvapp.security.jwt.JwtUtils;
+import wisteria.cvapp.security.service.UserDetailsImpl;
 import wisteria.cvapp.service.UserService;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -17,6 +28,9 @@ import wisteria.cvapp.service.UserService;
 @Slf4j
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final JwtUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
 
 
 
@@ -27,9 +41,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void registerUser(AuthRegisterUserDto authRegisterUserDto) {
+        User userExists=userRepository.findByUsername(authRegisterUserDto.getUsername());
+        if(userExists!=null)
+        {
+            log.error("Error while creating a new user for the user with username={}", authRegisterUserDto.getUsername());
+            throw new RuntimeException("Username already exists");
+        }
         User user = new User();
+        user.setUsername(authRegisterUserDto.getUsername());
         user.setEmail(authRegisterUserDto.getEmail());
-        user.setPassword(authRegisterUserDto.getPassword());
+        user.setPassword(passwordEncoder.encode(authRegisterUserDto.getPassword()));
         user.setName(authRegisterUserDto.getFirstName());
         user.setSurname(authRegisterUserDto.getLastName());
         this.userRepository.save(user);
@@ -53,10 +74,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void changeUserPassword(AuthLoginUserDto authLoginUserDto) {
-        User user = this.userRepository.findByEmail(authLoginUserDto.getEmail());
+        User user = this.userRepository.findByUsername(authLoginUserDto.getUsername());
         if (user == null) {
-            log.error("Error while changing password for the user with email={}", authLoginUserDto.getEmail());
-            throw new RuntimeException("Invalid email");
+            log.error("Error while changing password for the user with username={}", authLoginUserDto.getUsername());
+            throw new RuntimeException("Invalid username");
         }
         user.setPassword(authLoginUserDto.getPassword());
         this.userRepository.save(user);
@@ -64,21 +85,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public JwtSignInUserDto loginUser(AuthLoginUserDto authLoginUserDto) {
-//        Authentication authentication = authenticationManager
-//                .authenticate(new UsernamePasswordAuthenticationToken(authLoginUserDto.getEmail(), authLoginUserDto.getPassword()));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authLoginUserDto.getUsername(), authLoginUserDto.getPassword()));
 
-        User user = this.userRepository.findByEmail(authLoginUserDto.getEmail());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
 
-        //SecurityContextHolder.getContext().setAuthentication(authentication);
-        //String jwt = jwtUtils.generateJwtToken(authentication);
-
-        //UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
 
         JwtSignInUserDto jwtSignInUserDto = new JwtSignInUserDto();
-        //jwtSignInUserDto.setAccessToken(jwt);
-        //jwtSignInUserDto.setEmail(userDetails.getUsername());
-        jwtSignInUserDto.setFullName(user.getName() + " " + user.getSurname());
-        jwtSignInUserDto.setRole(user.getRole());
+        jwtSignInUserDto.setAccessToken(jwt);
+        jwtSignInUserDto.setEmail(userDetails.getEmail());
+        jwtSignInUserDto.setUsername(userDetails.getUsername());
+        jwtSignInUserDto.setRole(roles.get(0));
 
         return jwtSignInUserDto;
     }
