@@ -34,7 +34,7 @@ class CvServiceTest {
         Integer cvId=5;
         Integer userId=1;
         //this.cvService.getCv(cvId,userId);
-        log.info(TestHelpers.objectToJson(this.cvService.getCv(cvId,userId)));
+        log.info(TestHelpers.objectToJson(this.cvService.getCv(cvId)));
     }
 
     @Test

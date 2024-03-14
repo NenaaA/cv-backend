@@ -65,14 +65,14 @@ public class CvCategoryServiceImpl implements CvCategoryService {
     }
 
     @Override
-    public List<Integer> getCategoryIdsByCvIdAndUserId(Integer cvId, Integer userId) {
-        return this.cvCategoryRepository.findCategoryIdsByCvId(cvId, userId);
+    public List<Integer> getCategoryIdsByCvId(Integer cvId) {
+        return this.cvCategoryRepository.findCategoryIdsByCvId(cvId);
     }
 
 
     @Override
-    public Map<String, List<List<CvDetailsFieldDto>>> getFieldDetailsForCvId(Integer cvId, Integer userId) {
-        List<Integer> categoryIdsForCv = getCategoryIdsByCvIdAndUserId(cvId, userId);
+    public Map<String, List<List<CvDetailsFieldDto>>> getFieldDetailsForCvId(Integer cvId) {
+        List<Integer> categoryIdsForCv = getCategoryIdsByCvId(cvId);
         return this.cvCategoryDetailsService.getCvCategoryDetailsForCategoryIdList(categoryIdsForCv);
     }
 

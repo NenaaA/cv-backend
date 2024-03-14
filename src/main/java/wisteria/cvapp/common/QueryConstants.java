@@ -18,7 +18,7 @@ public final class QueryConstants {
             "where cv_id=:cvId";
     public static final String getCvCategoriesIdsByCvId="select cc.id\n" +
             "from cv inner join cv_category cc on cv.id = cc.cv_id\n" +
-            "where cv.id=:cvId and cv.user_id=:userId";
+            "where cv.id=:cvId";
     //CV CATEGORY DETAILS
     public static final String getCvDetails="select cc.id       as categoryId,\n" +
             "       cc.category as categoryName,\n" +

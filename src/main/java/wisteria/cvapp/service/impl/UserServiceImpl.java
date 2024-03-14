@@ -1,5 +1,6 @@
 package wisteria.cvapp.service.impl;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,7 +34,6 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
 
-
     @Override
     public User getUserById(Integer userId) {
         return this.userRepository.getUserById(userId);
@@ -41,9 +41,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void registerUser(AuthRegisterUserDto authRegisterUserDto) {
-        User userExists=userRepository.findByUsername(authRegisterUserDto.getUsername());
-        if(userExists!=null)
-        {
+        User userExists = userRepository.findByUsername(authRegisterUserDto.getUsername());
+        if (userExists != null) {
             log.error("Error while creating a new user for the user with username={}", authRegisterUserDto.getUsername());
             throw new RuntimeException("Username already exists");
         }
@@ -104,4 +103,30 @@ public class UserServiceImpl implements UserService {
 
         return jwtSignInUserDto;
     }
+
+    @Override
+    public boolean checkJwtAuthentication(@NonNull Integer userId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            log.error("The logged user does not exist in the Db, username={}", username);
+            throw new RuntimeException("The logged user does not exist in the DB");
+        }
+        return userId.equals(user.getId());
+
+
+    }
+
+    @Override
+    public User getLoggedInUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            log.error("The logged user does not exist in the Db, username={}", username);
+            throw new RuntimeException("The logged user does not exist in the DB");
+        }
+        return user;
+    }
+
+
 }

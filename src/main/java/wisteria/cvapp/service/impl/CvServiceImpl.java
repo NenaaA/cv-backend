@@ -19,7 +19,7 @@ import wisteria.cvapp.service.UserService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -32,11 +32,16 @@ public class CvServiceImpl implements CvService {
 
     @Override
     public List<Cv> getAllCvForUserId(@NonNull Integer userId) {
+        if(!userService.checkJwtAuthentication(userId))
+        {
+            log.error("Logged in user does not match user id={} while retrieving cv list",userId);
+            throw new RuntimeException("The logged in user does not match the user id provided");
+        }
         return cvRepository.findAllByUser_Id(userId);
     }
 
     @Override
-    public CvDetailsDto getCv(@NotNull Integer cvId, @NonNull Integer userId) {
+    public CvDetailsDto getCv(@NotNull Integer cvId) {
         // List<List<String>> cvDetailsFieldDbValues = this.cvRepository.getCvDetails(cvId, userId);
 //       cvDetailsDtos.forEach(dto->cvDetailsMap.put(dto.getCategory(), new ArrayList<>()));
 //        cvDetailsDtos.forEach(dto->cvDetailsMap.get(dto.getCategory()).add(dto));
@@ -50,9 +55,9 @@ public class CvServiceImpl implements CvService {
 //        ).collect(Collectors.toList());
 //        Map<String, List<CvDetailsFieldDto>> cvDetailsMap = cvDetailsFieldDtos.stream()
 //                .collect(Collectors.groupingBy(CvDetailsFieldDto::getCategory));
-        Map<String, List<List<CvDetailsFieldDto>>> cvDetailsMap = this.cvCategoryService.getFieldDetailsForCvId(cvId, userId);
+        Map<String, List<List<CvDetailsFieldDto>>> cvDetailsMap = this.cvCategoryService.getFieldDetailsForCvId(cvId);
         CvDetailsDto cvDetailsDto = new CvDetailsDto();
-        cvDetailsDto.setUserId(userId);
+        cvDetailsDto.setUserId(this.userService.getLoggedInUser().getId());
         cvDetailsDto.getCategoryMap().putAll(cvDetailsMap);
         return cvDetailsDto;
 
@@ -62,10 +67,16 @@ public class CvServiceImpl implements CvService {
     public Integer createCv(@NonNull CvDetailsDto cvDetailsDto) {
         //get the user
         User user = this.userService.getUserById(cvDetailsDto.getUserId());
+
         //check if user is null
         if (user == null) {
             log.error("User is null for user id={}, while creating a new cv", cvDetailsDto.getUserId());
             throw new RuntimeException("The user is not valid");
+        }
+        if(!userService.checkJwtAuthentication(user.getId()))
+        {
+            log.error("Logged in user does not match user id={} while retrieving cv list",user.getId());
+            throw new RuntimeException("The logged in user does not match the user id provided");
         }
         //create cv
         Cv cv = new Cv();
@@ -88,6 +99,11 @@ public class CvServiceImpl implements CvService {
         if (user == null) {
             log.error("User is null for user id={}, while updating a cv with id={}", cvDetailsDto.getUserId(), cvId);
             throw new RuntimeException("The user is not valid");
+        }
+        if(!userService.checkJwtAuthentication(user.getId()))
+        {
+            log.error("Logged in user does not match user id={} while retrieving cv list",user.getId());
+            throw new RuntimeException("The logged in user does not match the user id provided");
         }
         //find the cv
         Cv cv = this.cvRepository.getCvById(cvId);

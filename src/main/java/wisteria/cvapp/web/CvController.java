@@ -2,6 +2,8 @@ package wisteria.cvapp.web;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import wisteria.cvapp.model.Cv;
 import wisteria.cvapp.model.dto.CvDetailsDto;
@@ -19,14 +21,15 @@ public class CvController {
     //read cv list for user
     @GetMapping()
     public ResponseEntity<List<Cv>> getCvList(@RequestParam Integer userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         return ResponseEntity.ok(this.cvService.getAllCvForUserId(userId));
     }
 
     //read cv for user
     @GetMapping(value = "/id/{id}")
-    public ResponseEntity<CvDetailsDto> getCv(@PathVariable Integer id,
-                                              @RequestParam Integer userId) {
-        return ResponseEntity.ok(this.cvService.getCv(id, userId));
+    public ResponseEntity<CvDetailsDto> getCv(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.cvService.getCv(id));
     }
 
     //create

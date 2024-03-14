@@ -15,5 +15,5 @@ public interface CvCategoryRepository extends JpaRepository<CvCategory, Integer>
     List<CvCategory> findAllByCv(Integer cvId);
 
     @Query(value = QueryConstants.getCvCategoriesIdsByCvId, nativeQuery = true)
-    List<Integer> findCategoryIdsByCvId(Integer cvId, Integer userId);
+    List<Integer> findCategoryIdsByCvId(Integer cvId);
 }
