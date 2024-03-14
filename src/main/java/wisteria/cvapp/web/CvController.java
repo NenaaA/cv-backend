@@ -9,7 +9,7 @@ import wisteria.cvapp.service.CvService;
 
 import java.util.List;
 
-
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping(value = "/api/cv")
 @RequiredArgsConstructor
