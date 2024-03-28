@@ -9,6 +9,7 @@ import wisteria.cvapp.model.dto.AuthRegisterUserDto;
 import wisteria.cvapp.model.dto.JwtSignInUserDto;
 import wisteria.cvapp.service.UserService;
 
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping(value = "/api/auth")
 @RequiredArgsConstructor

@@ -11,7 +11,7 @@ import wisteria.cvapp.service.CvService;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true", maxAge = 3600)
 @RestController
 @RequestMapping(value = "/api/cv")
 @RequiredArgsConstructor

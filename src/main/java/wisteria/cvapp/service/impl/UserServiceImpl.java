@@ -99,6 +99,7 @@ public class UserServiceImpl implements UserService {
         jwtSignInUserDto.setAccessToken(jwt);
         jwtSignInUserDto.setEmail(userDetails.getEmail());
         jwtSignInUserDto.setUsername(userDetails.getUsername());
+        jwtSignInUserDto.setUserId(userDetails.getId());
         jwtSignInUserDto.setRole(roles.get(0));
 
         return jwtSignInUserDto;
