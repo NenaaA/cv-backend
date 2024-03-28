@@ -5,11 +5,11 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import wisteria.cvapp.model.Config;
 import wisteria.cvapp.model.Cv;
 import wisteria.cvapp.model.CvCategory;
 import wisteria.cvapp.model.dto.CvDetailsDto;
-import wisteria.cvapp.model.dto.CvDetailsFieldDto;
 import wisteria.cvapp.repository.CvCategoryRepository;
 import wisteria.cvapp.service.ConfigService;
 import wisteria.cvapp.service.CvCategoryDetailsService;
@@ -31,28 +31,31 @@ public class CvCategoryServiceImpl implements CvCategoryService {
         List<Integer> resultIdList = new ArrayList<>();
         //create cv category for every key
         for (String categoryName : cvDetailsDto.getCategoryMap().keySet()) {
-            List<List<CvDetailsFieldDto>> categoryList = cvDetailsDto.getCategoryMap().get(categoryName);
-            for (List<CvDetailsFieldDto> fieldDtoList : categoryList) {
-                //get fields for the category
+            //get fields for the category
+            List<Map<String, String>> categoryList = cvDetailsDto.getCategoryMap().get(categoryName);
+            for (Map<String, String> fieldDtoMap : categoryList) {
                 //create and save the cvCategory
-                CvCategory cvCategory = categoryMapping(categoryName, fieldDtoList, cv);
-                if (cvCategory == null) {
+                CvCategory cvCategory = categoryMapping(categoryName, fieldDtoMap, cv);
+                if (cvCategory.getCategory() == null) {
                     log.error("CvCategory is null, exception while creating the cv category");
                     throw new RuntimeException("Cv category is null");
                 }
                 this.cvCategoryRepository.save(cvCategory);
                 log.info("New cvCategory created with id={} and category={}, for cv with id={}",
                         cvCategory.getId(), cvCategory.getCategory(), cv.getId());
+                //adding the category int the result list
                 resultIdList.add(cvCategory.getId());
                 // for every category save the category fields
-                this.cvCategoryDetailsService.saveAllFieldsForCategory(cvCategory, fieldDtoList);
+                this.cvCategoryDetailsService.saveAllFieldsForCategory(cvCategory, fieldDtoMap);
             }
         }
         return resultIdList;
     }
 
+    @Transactional
     @Override
-    public List<Integer> deleteAll(@NotNull Cv cv) {
+    public void deleteAll(@NotNull Cv cv) {
+        //find all categories by the cv
         List<CvCategory> cvCategoryList = this.cvCategoryRepository.findAllByCv(cv.getId());
         try {
             this.cvCategoryDetailsService.deleteAllFieldsForCategoryList(cvCategoryList);
@@ -61,7 +64,6 @@ public class CvCategoryServiceImpl implements CvCategoryService {
             log.error("Exception during deleting the cv category, exception=" + e);
             throw new RuntimeException("Deleting category not successful");
         }
-        return null;
     }
 
     @Override
@@ -71,25 +73,21 @@ public class CvCategoryServiceImpl implements CvCategoryService {
 
 
     @Override
-    public Map<String, List<List<CvDetailsFieldDto>>> getFieldDetailsForCvId(Integer cvId) {
+    public Map<String, List<Map<String, String>>> getFieldDetailsForCvId(Integer cvId) {
         List<Integer> categoryIdsForCv = getCategoryIdsByCvId(cvId);
         return this.cvCategoryDetailsService.getCvCategoryDetailsForCategoryIdList(categoryIdsForCv);
     }
 
     private CvCategory categoryMapping(String categoryName,
-                                       List<CvDetailsFieldDto> fieldDtoList,
+                                       Map<String, String> fieldDtoMap,
                                        Cv cv) {
-
         //get the categories present in the DB
         List<Config> categoryNameAndRuleList = this.configService
                 .getConfigByGroupAndAttribute("Category", "CategoryName");
-        //TODO:if there is a new category write it in the db
         //create the cvCategory name
         String cvCategoryName = cvCategoryNameMapping(categoryName.toUpperCase(),
                 categoryNameAndRuleList,
-                fieldDtoList);
-        if (cvCategoryName == null)
-            return null;
+                fieldDtoMap);
         //create the cvCategory
         CvCategory cvCategory = new CvCategory();
         cvCategory.setCategory(categoryName);
@@ -100,20 +98,22 @@ public class CvCategoryServiceImpl implements CvCategoryService {
 
     private String cvCategoryNameMapping(String categoryName,
                                          List<Config> categoryNameAndRuleList,
-                                         List<CvDetailsFieldDto> fieldDtoList) {
+                                         Map<String, String> fieldDtoMap) {
         //get the label list for the category name
         String categoryNameLabelRule = categoryNameAndRuleList.stream()
                 .filter(config -> categoryName.equalsIgnoreCase(config.getValue()))
                 .map(Config::getAdditionalInfo)
                 .findFirst()
                 .orElse(null);
-        if (categoryNameLabelRule == null)
-            return null;
+        //if there is no rules for the category
+        if (categoryNameLabelRule == null) {
+            log.error("There is no rule for creating the name of the category {}, please enter the rule in the DB", categoryName);
+            throw new RuntimeException("Error while creating the cv");
+        }
         List<String> labelList = Arrays.asList(categoryNameLabelRule.split(","));
         //get the label values for the label in the list and create the category name
-        return fieldDtoList.stream()
-                .filter(cvDetailsFieldDto -> labelList.contains(cvDetailsFieldDto.getLabel().toUpperCase()))
-                .map(CvDetailsFieldDto::getValue)
+        return fieldDtoMap.values().stream()
+                .filter(cvDetailsFieldDto -> labelList.contains(cvDetailsFieldDto.toUpperCase()))
                 .collect(Collectors.joining("_"));
     }
 }

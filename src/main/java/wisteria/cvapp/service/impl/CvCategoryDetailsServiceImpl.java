@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import wisteria.cvapp.model.CvCategory;
 import wisteria.cvapp.model.CvCategoryDetails;
-import wisteria.cvapp.model.dto.CvDetailsFieldDto;
 import wisteria.cvapp.model.projection.CvCategoryFieldProjection;
 import wisteria.cvapp.repository.CvCategoryDetailsRepository;
 import wisteria.cvapp.service.CvCategoryDetailsService;
@@ -23,16 +22,18 @@ public class CvCategoryDetailsServiceImpl implements CvCategoryDetailsService {
 
     @Override
     public List<CvCategoryDetails> saveAllFieldsForCategory(@NotNull CvCategory cvCategory,
-                                                            @NonNull List<CvDetailsFieldDto> fieldDtoList) {
-        List<CvCategoryDetails> cvCategoryDetailsList = fieldDtoList
+                                                            @NonNull Map<String, String> fieldDtoMap) {
+        //mapping each field to cvCategoryDetails model for inserting in DB
+        List<CvCategoryDetails> cvCategoryDetailsList = fieldDtoMap.entrySet()
                 .stream()
-                .map(dto -> {
+                .map(entry -> {
                     CvCategoryDetails cvCategoryDetails = new CvCategoryDetails();
                     cvCategoryDetails.setCvCategory(cvCategory);
-                    cvCategoryDetails.setLabel(dto.getLabel());
-                    cvCategoryDetails.setValue(dto.getValue());
+                    cvCategoryDetails.setLabel(entry.getKey());
+                    cvCategoryDetails.setValue(entry.getValue());
                     return cvCategoryDetails;
                 }).collect(Collectors.toList());
+        //saving all fields for the category in DB
         this.cvCategoryDetailsRepository.saveAll(cvCategoryDetailsList);
         log.info("All fields for cvCategory with category={} were successfully created in cvCategoryDetails",
                 cvCategory.getCategory());
@@ -47,22 +48,23 @@ public class CvCategoryDetailsServiceImpl implements CvCategoryDetailsService {
 
 
     @Override
-    public Map<String, List<List<CvDetailsFieldDto>>> getCvCategoryDetailsForCategoryIdList(List<Integer> categoryIds) {
+    public Map<String, List<Map<String, String>>> getCvCategoryDetailsForCategoryIdList(List<Integer> categoryIds) {
+        //get cvDetails for every field from DB
         List<CvCategoryFieldProjection> cvDetailsFields = this.cvCategoryDetailsRepository.getCvDetails(categoryIds);
-        Map<String, List<List<CvDetailsFieldDto>>> resultMap = new HashMap<>();
+        Map<String, List<Map<String, String>>> resultMap = new HashMap<>();
         Map<Integer, List<CvCategoryFieldProjection>> projectionMap = cvDetailsFields.stream()
                 .collect(Collectors.groupingBy(CvCategoryFieldProjection::getCategoryId));
+        //map the values, if the key is not present new array is created otherwise the map of fields is added
         for (Map.Entry<Integer, List<CvCategoryFieldProjection>> entry : projectionMap.entrySet()) {
             String categoryKey = (entry.getValue().get(0).getCategoryName());
             resultMap.computeIfAbsent(categoryKey, k -> new ArrayList<>()).add(fieldMappingFromProjection(entry.getValue()));
         }
         return resultMap;
     }
-    private List<CvDetailsFieldDto> fieldMappingFromProjection(List<CvCategoryFieldProjection> fieldProjections) {
+
+    private Map<String, String> fieldMappingFromProjection(List<CvCategoryFieldProjection> fieldProjections) {
         return fieldProjections.stream()
-                .map(projection -> new CvDetailsFieldDto(projection.getCategoryName(),
-                        projection.getLabel(),
-                        projection.getValue()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(CvCategoryFieldProjection::getLabel, CvCategoryFieldProjection::getValue));
+
     }
 }

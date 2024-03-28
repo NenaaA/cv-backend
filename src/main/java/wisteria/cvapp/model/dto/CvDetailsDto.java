@@ -16,5 +16,5 @@ public class CvDetailsDto {
     @NotNull(message = "userId is required")
     private Integer userId;
 
-    private Map<String, List<List<CvDetailsFieldDto>>> categoryMap= new HashMap<>();
+    private Map<String, List<Map<String,String>>> categoryMap= new HashMap<>();
 }

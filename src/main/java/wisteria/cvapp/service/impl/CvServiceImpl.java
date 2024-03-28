@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import wisteria.cvapp.model.Cv;
 import wisteria.cvapp.model.User;
 import wisteria.cvapp.model.dto.CvDetailsDto;
-import wisteria.cvapp.model.dto.CvDetailsFieldDto;
 import wisteria.cvapp.repository.CvRepository;
 import wisteria.cvapp.service.CvCategoryService;
 import wisteria.cvapp.service.CvService;
@@ -42,20 +41,10 @@ public class CvServiceImpl implements CvService {
 
     @Override
     public CvDetailsDto getCv(@NotNull Integer cvId) {
-        // List<List<String>> cvDetailsFieldDbValues = this.cvRepository.getCvDetails(cvId, userId);
-//       cvDetailsDtos.forEach(dto->cvDetailsMap.put(dto.getCategory(), new ArrayList<>()));
-//        cvDetailsDtos.forEach(dto->cvDetailsMap.get(dto.getCategory()).add(dto));
-        //find all cv category ids for the cv
-//        List<Integer> categoryIds=this.cvCategoryService.getCategoryIdsByCvIdAndUserId(cvId,userId);
-//        List<CvDetailsFieldDto> cvDetailsFieldDtos = cvDetailsFieldDbValues.stream().map(fieldList -> {
-//                    if (fieldList.size() == 3)
-//                        return new CvDetailsFieldDto(fieldList.get(0), fieldList.get(1), fieldList.get(2));
-//                    return null;
-//                }
-//        ).collect(Collectors.toList());
-//        Map<String, List<CvDetailsFieldDto>> cvDetailsMap = cvDetailsFieldDtos.stream()
-//                .collect(Collectors.groupingBy(CvDetailsFieldDto::getCategory));
-        Map<String, List<List<CvDetailsFieldDto>>> cvDetailsMap = this.cvCategoryService.getFieldDetailsForCvId(cvId);
+        checkIfTheLoggedInUserCorresponds(cvId);
+        //get fields for the cv
+        Map<String, List<Map<String,String>>> cvDetailsMap = this.cvCategoryService.getFieldDetailsForCvId(cvId);
+        //create the response
         CvDetailsDto cvDetailsDto = new CvDetailsDto();
         cvDetailsDto.setUserId(this.userService.getLoggedInUser().getId());
         cvDetailsDto.getCategoryMap().putAll(cvDetailsMap);
@@ -111,6 +100,9 @@ public class CvServiceImpl implements CvService {
             log.error("Cv is null while updating cv with id={}", cvId);
             throw new RuntimeException("The cv is not valid ");
         }
+        //delete all categories associated to the cv
+        this.cvCategoryService.deleteAll(cv);
+        //add the new categories
         this.cvCategoryService.saveAll(cvDetailsDto, cv);
         return cvId;
     }
@@ -118,16 +110,30 @@ public class CvServiceImpl implements CvService {
     @Override
     @Transactional
     public Integer deleteCv(@NotNull Integer cvId) {
+        checkIfTheLoggedInUserCorresponds(cvId);
         //find the cv
         Cv cv = this.cvRepository.getCvById(cvId);
         if (cv == null) {
             log.error("Cv is null while deleting the cv with id={}", cvId);
             throw new RuntimeException("The cv is not valid ");
         }
+        //delete all categories and associated
         this.cvCategoryService.deleteAll(cv);
+        //delete the cv
         this.cvRepository.delete(cv);
 
         return cvId;
+    }
+
+    private void checkIfTheLoggedInUserCorresponds(Integer cvId){
+        //Check if the logged in user has the cv
+        User loggedInUser=this.userService.getLoggedInUser();
+        List<Cv> cvListForUser=cvRepository.findAllByUser_Id(loggedInUser.getId());
+        if(cvListForUser.stream().noneMatch(cv->cv.getId().equals(cvId)))
+        {
+            log.error("The user with id {} is attempting to get the cv with id {} which is not in his cv list",loggedInUser.getId(),cvId);
+            throw new RuntimeException("The cv id is not present in the logged in user list");
+        }
     }
 
 }
