@@ -52,6 +52,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(authRegisterUserDto.getPassword()));
         user.setName(authRegisterUserDto.getFirstName());
         user.setSurname(authRegisterUserDto.getLastName());
+        user.setRole("postgres");
         this.userRepository.save(user);
     }
 

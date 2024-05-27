@@ -15,7 +15,9 @@ import wisteria.cvapp.service.CvService;
 import wisteria.cvapp.service.UserService;
 
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +54,15 @@ public class CvServiceImpl implements CvService {
 
     }
 
+    public static Timestamp convertToTimestamp(LocalDateTime localDateTime) {
+        return Timestamp.valueOf(localDateTime);
+    }
+
+    public static String formatLocalDateTime(LocalDateTime localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy / HH:mm");
+        return localDateTime.format(formatter);
+    }
+
     @Override
     public Integer createCv(@NonNull CvDetailsDto cvDetailsDto) {
         //get the user
@@ -69,9 +80,9 @@ public class CvServiceImpl implements CvService {
         }
         //create cv
         Cv cv = new Cv();
-        // nomenclature cv_username_date
-        cv.setName("cv_" + user.getUsername() + "_" + LocalDateTime.now());
+        cv.setName(cvDetailsDto.getCategoryMap().get("PersonalInformation").get(0).get("JobTitle") + " " + formatLocalDateTime(LocalDateTime.now()));
         cv.setUser(user);
+        cv.setCreated_at(convertToTimestamp(LocalDateTime.now()));
         Cv newCv = this.cvRepository.save(cv);
         log.info("New cv created with id={}, for user userId={} and username={}",
                 newCv.getId(), user.getId(), user.getUsername());
